@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./ERC721A/ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -9,11 +9,8 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 
-contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
-    using Counters for Counters.Counter;
+contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     using Strings for uint;
-
-    Counters.Counter private _tokenIds;
 
     enum Step {
         SaleNotStarted,
@@ -24,12 +21,16 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
 
     Step public currentStep;
 
-    bytes32 public merkleRoot;
+    bytes32 public wlMerkleRoot;
+    bytes32 public ogMerkleRoot;
 
-    uint public price = 0.05 ether;
-    mapping(address => uint) public mintByWallet;
+    uint public wlPrice = 0.066 ether;
+    uint public publicPrice = 0.013 ether;
 
-    uint public constant max_supply = 10;
+    mapping(address => uint) private mintByWallet;
+    mapping(address => uint) private mintByWalletForTeam;
+
+    uint public constant max_supply = 222;
 
     string public notRevealURI;
     string public revealURI;
@@ -44,36 +45,57 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     * @param rootOfMerkle The root of the merkle tree.
     * @param teamMembers The team members of the token.
     */
-    constructor(string memory _notRevealURI, bytes32 _rootOfMerkle, address[] memory _teamMembers, address[] memory _coreTeam, uint[] memory _teamShares)
-    ERC721("Test", "TST")
+    constructor(string memory _notRevealURI, bytes32 _ogMerkleRoot, bytes32 _wlMerkleRoot, address[] memory _teamMembers, address[] memory _coreTeam, uint[] memory _teamShares)
+    ERC721A("Test", "TST")
     PaymentSplitter(_coreTeam, _teamShares)
     {
         setNotRevealURI(_notRevealURI);
-        setMerkleRoot(_rootOfMerkle);
+        setOGMerkleRoot(_ogMerkleRoot);
+        setWlMerkleRoot(_wlMerkleRoot);
         teamMembers = _teamMembers;
     }
 
     /*
-    * @notice Mint function
-    * @param _proof Merkle Proof
+    * @notice OG mint function
+    * @param _proof Merkle Proof for OG
+    * @param _amount The amount of tokens to mint. (max 3)
     */
-    function mint(bytes32[] calldata _proof) external payable {
-        require(currentStep == Step.WhitelistSale || currentStep == Step.PublicSale, "The sale is not open.");
-
-        if (currentStep == Step.WhitelistSale) {
-            require(isWhitelisted(msg.sender, _proof), "Not whitelisted.");
-        }
-
-        require(mintByWallet[msg.sender] + 1 <= 1, "You can only mint one NFT per address.");
-        require(_tokenIds.current() + 1  <= max_supply, "Max supply exceeded.");
-        require(msg.value >= price, "Not enough funds to purchase.");
-
-        mintByWallet[msg.sender]++;
-
-        uint newTokenID = _tokenIds.current();
-        _mint(msg.sender, newTokenID);
-        _tokenIds.increment();
+    function OGMint(bytes32[] calldata _proof, uint _amount) {
+        require(currentStep == Step.WhitelistSale, "The OG sale is not open.");
+        require(isOG(msg.sender, _proof), "Not OG.");
+        require(mintByWallet[msg.sender] + _amount <= 3, "You can only mint 3 NFTs with OG role");
+        require(totalSupply() + _amount <= max_supply, "Max supply exceeded");
+        require(msg.value >= wlPrice * _amount, "Not enough ETH");
+        mintByWallet[msg.sender] += _amount;
+        _safeMint(msg.sender, _amount);
     }
+
+    /*
+    * @notice WL mint function
+    * @param _proof Merkle Proof for WL
+    * @param _amount The amount of tokens to mint. (max 2)
+    */
+    function WLMint(bytes32[] calldata _proof, uint _amount) {
+        require(currentStep == Step.WhitelistSale, "The WL sale is not open.");
+        require(isWhitelisted(msg.sender, _proof), "Not WL.");
+        require(mintByWallet[msg.sender] + _amount <= 2, "You can only mint 2 NFTs with WL role");
+        require(totalSupply() + _amount <= max_supply, "Max supply exceeded");
+        require(msg.value >= wlPrice * _amount, "Not enough ETH");
+        mintByWallet[msg.sender] += _amount;
+        _safeMint(msg.sender, _amount);
+    }
+
+    /*
+    * @notice public mint function
+    * @param _amount The amount of tokens to mint. (no limit)
+    */
+    function PublicMint(uint _amount) {
+        require(currentStep == Step.PublicSale, "The public sale is not open.");
+        require(totalSupply() + _amount <= max_supply, "Max supply exceeded");
+        require(msg.value >= publicPrice * _amount, "Not enough ETH");
+        _safeMint(msg.sender, _amount);
+    }
+
 
     /*
     * @notice Mint function for team members
@@ -81,14 +103,12 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     function mintForTeam() external payable {
         require(currentStep == Step.WhitelistSale || currentStep == Step.PublicSale, "The sale is not open.");
         require(isTeamMember(msg.sender), "Not a team member.");
-        require(mintByWallet[msg.sender] + 1 <= 1, "You can only mint one NFT per address.");
-        require(_tokenIds.current() + 1  <= max_supply, "Max supply exceeded.");
+        require(mintByWalletForTeam[msg.sender] + 1 <= 1, "You can only mint one NFT per address.");
+        require(totalSupply() + 1 <= max_supply, "Max supply exceeded");
 
-        mintByWallet[msg.sender]++;
+        mintByWalletForTeam[msg.sender]++;
 
-        uint newTokenID = _tokenIds.current();
-        _mint(msg.sender, newTokenID);
-        _tokenIds.increment();
+        _safeMint(msg.sender, 1);
     }
 
     /*
@@ -98,11 +118,7 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     */
     function mintForOwner(uint _count, address _to) external payable onlyOwner {
         require(_tokenIds.current() + _count  <= max_supply, "Max supply exceeded.");
-        for (uint i = 0; i < _count; i++) {
-            uint newTokenID = _tokenIds.current();
-            _mint(_to, newTokenID);
-            _tokenIds.increment();
-        }
+        _safeMint(_to, _count);
     }
 
     /*
@@ -164,11 +180,19 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     }
 
     /*
-    * @notice set merkle root
+    * @notice set wl merkle root
     * @param _merkleRoot bytes32
     */
-    function setMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
-        merkleRoot = _merkleRoot;
+    function setWlMerkleRoot(bytes32 _wlMerkleRoot) public onlyOwner {
+        wlMerkleRoot = _wlMerkleRoot;
+    }
+
+    /*
+    * @notice set wl merkle root
+    * @param _merkleRoot bytes32
+    */
+    function setOGMerkleRoot(bytes32 _ogMerkleRoot) public onlyOwner {
+        ogMerkleRoot = _ogMerkleRoot;
     }
 
     /*
@@ -180,7 +204,28 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
         if (isRevealed) {
             return string(abi.encodePacked(revealURI, _tokenId.toString(), ".json"));
         }
-        return string(abi.encodePacked(notRevealURI, _tokenId.toString(),".json"));
+        return string(abi.encodePacked(notRevealURI));
+    }
+
+    /*
+    * @notice return current price
+    */
+    function getPrice() public view returns (uint) {
+        if (currentStep == Step.WhitelistSale) {
+            return wlPrice;
+        } else {
+            return publicPrice;
+        }
+    }
+
+    function isWLorOG(address _address, bytes32[] calldata wlProof, bytes32[] calldata ogProof) public view returns (uint) {
+        if (isOG(_address, ogProof)) {
+            return 1;
+        } else if (isWhitelisted(_address, wlProof)) {
+            return 2;
+        } else {
+            return 0;
+        }
     }
 
     /*
@@ -189,7 +234,16 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     * @param proof Merkle proof
     */
     function isWhitelisted(address _account, bytes32[] calldata proof) internal view returns(bool) {
-        return _verify(_leaf(_account), proof);
+        return _verifyWL(_leaf(_account), proof);
+    }
+
+    /*
+    * @notice know if user is OG
+    * @param _account address of user
+    * @param proof Merkle proof
+    */
+    function isOG(address _account, bytes32[] calldata proof) internal view returns(bool) {
+        return _verifyOG(_leaf(_account), proof);
     }
 
     /*
@@ -205,15 +259,24 @@ contract B3ARMARKETisERC721 is ERC721, Ownable, PaymentSplitter {
     * @param leaf bytes32 leaf of merkle tree
     * @param proof bytes32 Merkle proof
     */
-    function _verify(bytes32 leaf, bytes32[] memory proof) internal view returns(bool) {
-        return MerkleProof.verify(proof, merkleRoot, leaf);
+    function _verifyWL(bytes32 leaf, bytes32[] memory proof) internal view returns(bool) {
+        return MerkleProof.verify(proof, wlMerkleRoot, leaf);
+    }
+
+    /*
+    * @notice verify if user is whitelisted OG
+    * @param leaf bytes32 leaf of merkle tree
+    * @param proof bytes32 Merkle proof
+    */
+    function _verifyOG(bytes32 leaf, bytes32[] memory proof) internal view returns(bool) {
+        return MerkleProof.verify(proof, ogMerkleRoot, leaf);
     }
 
     /*
     * @notice check if user is team member
     * @param _account address of user
     */
-    function isTeamMember(address _account) public view returns(bool) {
+    function isTeamMember(address _account) private view returns(bool) {
         bool isInTeamMembersList = false;
         for (uint i = 0; i < teamMembers.length; i++) {
             if (teamMembers[i] == _account) {
