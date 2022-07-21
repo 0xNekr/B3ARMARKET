@@ -1,0 +1,10 @@
+module.exports = [
+    "not reveal",
+    "0xb027fc339d3a5e96dde445c4229ae79d330f20ebf6a4224ea6b78c431f61c229",
+    "0x842aa32b62a63a233b3e723c1cb484ed06d4ed2100d80909c5335d61ecc59126",
+    ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"],
+    ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"],
+    [100],
+    'B3AR MARKET',
+    'B3AR'
+]
