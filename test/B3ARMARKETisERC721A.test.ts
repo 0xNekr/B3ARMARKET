@@ -15,6 +15,7 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
     let og = []; // account 1 -> 40 (40 mints)
     let whitelisted = []; // account 1 -> 60 (120 mints)
     let free_mint = []; // 1 -> 30 (30 mints)
+    let totalBalance = 0;
 
     // @dev contract
     let contract;
@@ -87,10 +88,8 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
             ogMerkleRoot,
             wlMerkleRoot,
             fmMerkleRoot,
-            [owner.address, accounts[1]['address']],
-            [70, 30],
-            'B3AR MARKET',
-            'B3AR'
+            [owner.address, accounts[1]['address'], accounts[2]['address'], accounts[3]['address']],
+            [45, 25, 15, 15]
         );
     });
 
@@ -284,6 +283,7 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         for (let i = 0; i < og.length; i++) {
             const merkleProof = getOGMerkleProof(og[i].address);
             const price = ethers.utils.parseEther("0.0066");
+            totalBalance += parseInt(price.toString());
             await contract.connect(og[i]).OGMint(merkleProof, {value: price});
 
             expect(await contract.balanceOf(og[i].address)).to.equal(1);
@@ -330,6 +330,7 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         for (let i = 0; i < whitelisted.length; i++) {
             const merkleProof = getWLMerkleProof(whitelisted[i].address);
             const price = ethers.utils.parseEther("0.0132");
+            totalBalance += parseInt(price.toString());
             await contract.connect(whitelisted[i]).WLMint(merkleProof, 2, {value: price});
 
             if (i <= 39) {
@@ -378,6 +379,9 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
     it("2 peoples should be able to buy 16 NFTs", async () => {
         let price = ethers.utils.parseEther("0.0132");
         price = price.mul(16);
+
+        totalBalance += parseInt(price.toString());
+        totalBalance += parseInt(price.toString());
 
         await contract.connect(accounts[61]).PublicMint(16, {value: price});
         await contract.connect(accounts[62]).PublicMint(16, {value: price});
@@ -475,20 +479,30 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         }
     });
 
-    //
-    // it("owner should be able to update step to 3", async () => {
-    //     await contract.connect(owner).updateStep(3);
-    //     expect(await contract.currentStep()).to.equal(3);
-    // });
-    //
-    // it("owner should have revert for mintForTeam() call", async () => {
-    //     await expect(contract.connect(owner).mintForTeam()).to.be.revertedWith("The sale is not open.");
-    // });
-    //
-    // it("owner should have revert for mint() call", async () => {
-    //     const price = ethers.utils.parseEther("0.05");
-    //     await expect(contract.connect(owner).mint([], {value: price})).to.be.revertedWith("The sale is not open.");
-    // });
-    //
+    it("Contract balance should not be equal to 0", async () => {
+        const contractEthBalance = await ethers.provider.getBalance(contract.address);
+        expect(contractEthBalance.toString()).to.equal(totalBalance.toString());
+    });
+
+    it("non-team member should have revert when call release", async () => {
+        await expect(contract.connect(accounts[5])['release(address)'](accounts[5].address)).to.be.revertedWith("PaymentSplitter: account has no shares");
+    });
+
+    it("team members should be able to release", async () => {
+        await contract.connect(owner)['release(address)'](owner.address);
+        await contract.connect(accounts[1])['release(address)'](accounts[1].address);
+        await contract.connect(accounts[2])['release(address)'](accounts[2].address);
+        await contract.connect(accounts[3])['release(address)'](accounts[3].address);
+
+        const releasedByOwner = await contract.connect(owner)['released(address)'](owner.address);
+        const releasedByAccount1 = await contract.connect(accounts[1])['released(address)'](accounts[1].address);
+        const releasedByAccount2 = await contract.connect(accounts[2])['released(address)'](accounts[2].address);
+        const releasedByAccount3 = await contract.connect(accounts[3])['released(address)'](accounts[3].address);
+
+        expect(releasedByOwner.toString()).to.equal((totalBalance * 0.45).toString());
+        expect(releasedByAccount1.toString()).to.equal((totalBalance * 0.25).toString());
+        expect(releasedByAccount2.toString()).to.equal((totalBalance * 0.15).toString());
+        expect(releasedByAccount3.toString()).to.equal((totalBalance * 0.15).toString());
+    });
 
 })

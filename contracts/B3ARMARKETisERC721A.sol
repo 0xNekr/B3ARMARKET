@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 
 contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     using Strings for uint;
@@ -45,14 +44,14 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @param rootOfMerkle The root of the merkle tree.
     * @param teamMembers The team members of the token.
     */
-    constructor(string memory _baseURI, bytes32 _ogMerkleRoot, bytes32 _wlMerkleRoot, bytes32 _fmMerkleRoot, address[] memory _team, uint[] memory _teamShares, string memory _name, string memory _symbol)
-    ERC721A(_name, _symbol)
+    constructor(string memory _baseURI, bytes32 _ogMerkleRoot, bytes32 _wlMerkleRoot, bytes32 _fmMerkleRoot, address[] memory _team, uint[] memory _teamShares)
+    ERC721A("B3AR MARKET", "B3AR")
     PaymentSplitter(_team, _teamShares)
     {
-        setBaseURI(_baseURI);
-        setOGMerkleRoot(_ogMerkleRoot);
-        setWlMerkleRoot(_wlMerkleRoot);
-        setFMMerkleRoot(_fmMerkleRoot);
+        baseURI = _baseURI;
+        ogMerkleRoot = _ogMerkleRoot;
+        wlMerkleRoot = _wlMerkleRoot;
+        fmMerkleRoot = _fmMerkleRoot;
     }
 
     /*
@@ -60,7 +59,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @param _proof Merkle Proof for OG
     */
     function OGMint(bytes32[] calldata _proof) public payable {
-        require(currentStep == Step.OGSale, "The OG sale is not open.");
+       require(currentStep == Step.OGSale, "The OG sale is not open.");
         require(isOG(msg.sender, _proof), "Not OG.");
         require(mintByWalletOG[msg.sender] + 1 <= 1, "You can only mint 1 NFT with OG role");
         require(totalSupply() + 1 <= sale_supply, "Max supply exceeded");
