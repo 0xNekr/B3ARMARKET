@@ -6,8 +6,7 @@ const free_mint = require('../assets/fm.json');
 const keccak256 = require('keccak256');
 
 async function main() {
-    const notRevealURI = "not reveal";
-    const teamMember = ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"];
+    const baseURI = "baseURI";
     const coreTeam = ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"];
     const shares = [100];
 
@@ -44,7 +43,7 @@ async function main() {
 
     const contract = await ethers.getContractFactory("B3ARMARKETisERC721A");
     const Contract = await contract.deploy(
-        notRevealURI,
+        baseURI,
         ogRoot,
         wlRoot,
         fmRoot,
@@ -57,7 +56,7 @@ async function main() {
     await Contract.deployed();
 
 
-    console.log("Argument 1 :", notRevealURI);
+    console.log("Argument 1 :", baseURI);
     console.log("Argument 2 :", ogRoot);
     console.log("Argument 3 :", wlRoot);
     console.log("Argument 4 :", fmRoot);

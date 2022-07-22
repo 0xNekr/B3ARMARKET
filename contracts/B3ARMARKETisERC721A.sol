@@ -37,22 +37,19 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     uint public constant sale_supply = 192;
     uint public constant total_supply = 222;
 
-    string public notRevealURI;
-    string public revealURI;
-
-    bool public isRevealed = false;
+    string public baseURI;
 
     /*
     * @notice Initializes the contract with the given parameters.
-    * @param notRevealURI The base token URI of the token.
+    * @param baseURI The base token URI of the token.
     * @param rootOfMerkle The root of the merkle tree.
     * @param teamMembers The team members of the token.
     */
-    constructor(string memory _notRevealURI, bytes32 _ogMerkleRoot, bytes32 _wlMerkleRoot, bytes32 _fmMerkleRoot, address[] memory _team, uint[] memory _teamShares, string memory _name, string memory _symbol)
+    constructor(string memory _baseURI, bytes32 _ogMerkleRoot, bytes32 _wlMerkleRoot, bytes32 _fmMerkleRoot, address[] memory _team, uint[] memory _teamShares, string memory _name, string memory _symbol)
     ERC721A(_name, _symbol)
     PaymentSplitter(_team, _teamShares)
     {
-        setNotRevealURI(_notRevealURI);
+        setBaseURI(_baseURI);
         setOGMerkleRoot(_ogMerkleRoot);
         setWlMerkleRoot(_wlMerkleRoot);
         setFMMerkleRoot(_fmMerkleRoot);
@@ -132,26 +129,10 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
 
     /*
     * @notice set base token URI
-    * @param _baseTokenURI string
+    * @param _baseURI string
     */
-    function setNotRevealURI(string memory _notRevealURI) public onlyOwner {
-        notRevealURI = _notRevealURI;
-    }
-
-    /*
-    * @notice set reveal URI
-    * @param _revealURI string
-    */
-    function setRevealURI(string memory _revealURI) public onlyOwner {
-        revealURI = _revealURI;
-    }
-
-    /*
-    * @notice reveal
-    */
-    function reveal() external onlyOwner {
-        require(!isRevealed, "Already revealed");
-        isRevealed = true;
+    function setBaseURI(string memory _baseURI) public onlyOwner {
+        baseURI = _baseURI;
     }
 
     /*
@@ -184,10 +165,8 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     */
     function tokenURI(uint256 _tokenId) override public view returns (string memory) {
         require(_exists(_tokenId),"ERC721Metadata: URI query for nonexistent token");
-        if (isRevealed) {
-            return string(abi.encodePacked(revealURI, _tokenId.toString(), ".json"));
-        }
-        return string(abi.encodePacked(notRevealURI));
+
+        return string(abi.encodePacked(baseURI, _tokenId.toString()));
     }
 
     /*

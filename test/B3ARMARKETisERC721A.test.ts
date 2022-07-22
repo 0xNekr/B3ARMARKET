@@ -10,7 +10,7 @@ use(solidity);
 
 describe("B3ARMARKETisERC721A Unit tests", async () => {
     // @dev accounts
-    let  accounts = [];
+    let accounts = [];
     let owner; // account 0
     let og = []; // account 1 -> 40 (40 mints)
     let whitelisted = []; // account 1 -> 60 (120 mints)
@@ -83,7 +83,7 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         const Contract = await ethers.getContractFactory("B3ARMARKETisERC721A");
 
         contract = await Contract.connect(owner).deploy(
-            "ipfs://notRevealURI/",
+            "ipfs://baseURI/",
             ogMerkleRoot,
             wlMerkleRoot,
             fmMerkleRoot,
@@ -92,13 +92,6 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
             'B3AR MARKET',
             'B3AR'
         );
-
-        console.log("OG length:", og.length);
-        console.log("OG merkle root:", ogMerkleRoot);
-        console.log("Whitelisted length:", whitelisted.length);
-        console.log("Whitelisted merkle root:", wlMerkleRoot);
-        console.log("Free mint length:", free_mint.length);
-        console.log("Free mint merkle root:", fmMerkleRoot);
     });
 
     // @dev variables tests
@@ -123,14 +116,9 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         expect(sale_supply).to.equal(192);
     });
 
-    it("notRevealURI should be equal to 'ipfs://notRevealURI/'", async () => {
-        const notRevealURI = await contract.notRevealURI();
-        expect(notRevealURI).to.equal("ipfs://notRevealURI/");
-    });
-
-    it("revealURI should be empty", async () => {
-        const revealURI = await contract.revealURI();
-        expect(revealURI).to.equal("");
+    it("baseURI should be equal to 'ipfs://baseURI/'", async () => {
+        const baseURI = await contract.baseURI();
+        expect(baseURI).to.equal("ipfs://baseURI/");
     });
 
     it("currentStep should be equal to 0", async () => {
@@ -151,11 +139,6 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
     it("fmMerkleRoot should be equal to init fmMerkleRoot", async () => {
         const contractFmMerkleRoot = await contract.fmMerkleRoot();
         expect(contractFmMerkleRoot).to.equal(fmMerkleRoot);
-    });
-
-    it("isRevealed shoud be equal to false", async () => {
-        const isRevealed = await contract.isRevealed();
-        expect(isRevealed).to.equal(false);
     });
 
     // @dev functions tests
@@ -221,26 +204,15 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         expect(await contract.isFreeMint(accounts[30].address, newProof)).to.equal(true);
     });
 
-    it("owner should be able to modify notRevealURI", async () => {
-        const newNotRevealURI = "ipfs://newNotRevealURI/";
-        await contract.connect(owner).setNotRevealURI(newNotRevealURI);
-        const notRevealURI = await contract.notRevealURI();
-        expect(notRevealURI).to.equal(newNotRevealURI);
+    it("owner should be able to modify baseURI", async () => {
+        const newBaseURI = "ipfs://newBaseURI/";
+        await contract.connect(owner).setBaseURI(newBaseURI);
+        const baseURI = await contract.baseURI();
+        expect(baseURI).to.equal(newBaseURI);
     });
 
-    it("not_owner should have revert for setNotRevealURI() call", async () => {
-        await expect(contract.connect(og[0]).setNotRevealURI("ipfs://newNotRevealURI/")).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("owner should be able to modify revealURI", async () => {
-        const newRevealURI = "ipfs://newRevealURI/";
-        await contract.connect(owner).setRevealURI(newRevealURI);
-        const revealURI = await contract.revealURI();
-        expect(revealURI).to.equal(newRevealURI);
-    });
-
-    it("not_owner should have revert for setRevealURI() call", async () => {
-        await expect(contract.connect(og[1]).setRevealURI("ipfs://newRevealURI/")).to.be.revertedWith("Ownable: caller is not the owner");
+    it("not_owner should have revert for setBaseURI() call", async () => {
+        await expect(contract.connect(og[0]).setBaseURI("ipfs://newBaseURI/")).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("owner should have revert for tokenURI(0) call", async () => {
@@ -249,10 +221,6 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
 
     it("not_owner should have revert for mintForOwner() call", async () => {
         await expect(contract.connect(og[2]).mintForOwner(2, og[2].address)).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("not_owner should have revert for reveal() call", async () => {
-        await expect(contract.connect(og[3]).reveal()).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     // @dev functions tests
@@ -500,26 +468,10 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
         expect(await contract.currentStep()).to.equal(5);
     });
 
-    it("tokenURI should return notRevealURI for every token", async () => {
+    it("tokenURI should return baseURI for every token", async () => {
         const currentSupply = await contract.totalSupply();
         for (let i = 0; i < currentSupply; i++) {
-         expect(await contract.tokenURI(i)).to.equal("ipfs://newNotRevealURI/");
-        }
-    });
-
-    it("not owner should have revert for reveal() call", async () => {
-        await expect(contract.connect(whitelisted[0]).reveal()).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("owner should be able to reveal", async () => {
-        await contract.connect(owner).reveal();
-        expect(await contract.isRevealed()).to.equal(true);
-    });
-
-    it("tokenURI should return revealURI for every token", async () => {
-        const currentSupply = await contract.totalSupply();
-        for (let i = 0; i < currentSupply; i++) {
-            expect(await contract.tokenURI(i)).to.equal("ipfs://newRevealURI/" + i.toString() + ".json");
+            expect(await contract.tokenURI(i)).to.equal("ipfs://newBaseURI/" + i.toString());
         }
     });
 
