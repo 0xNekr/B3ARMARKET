@@ -348,8 +348,8 @@ describe("B3ARMARKETisERC721A Unit tests", async () => {
     // @dev Step 3 : PublicSale
 
     it("owner should be able to update step to 3", async () => {
-         await contract.connect(owner).updateStep(3);
-         expect(await contract.currentStep()).to.equal(3);
+        await contract.connect(owner).updateStep(3);
+        expect(await contract.currentStep()).to.equal(3);
     });
 
     it("OG should have revert for OGMint() call", async () => {

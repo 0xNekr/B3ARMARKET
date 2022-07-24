@@ -1,10 +1,8 @@
 module.exports = [
-    "not reveal",
-    "0xb027fc339d3a5e96dde445c4229ae79d330f20ebf6a4224ea6b78c431f61c229",
-    "0x842aa32b62a63a233b3e723c1cb484ed06d4ed2100d80909c5335d61ecc59126",
+    "ipfs://QmW2QBom5AdRqPdo4BWx2vft84y27s7MnocArfhtfgskN8/",
+    "0xcc282257b00874f200748c15caf302016c8fdcd37dbbe1831cb816da36b1412c",
+    "0x4bcb678fc0799e62ac10602f3a59a5a147ae81aa66972286d9ff804ff4e6851a",
+    "0xddadca1019bb89c82751a83a781d1414ed66d0bac41d254da47380c8cee535ca",
     ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"],
-    ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"],
-    [100],
-    'B3AR MARKET',
-    'B3AR'
+    [100]
 ]

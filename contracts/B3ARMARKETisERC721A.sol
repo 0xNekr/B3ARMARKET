@@ -55,11 +55,19 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     }
 
     /*
+    * @notice Modifier to check if the sender is not a contract
+    */
+    modifier callerIsUser() {
+        require(tx.origin == msg.sender, "The caller is another contract");
+        _;
+    }
+
+    /*
     * @notice OG mint function
     * @param _proof Merkle Proof for OG
     */
-    function OGMint(bytes32[] calldata _proof) public payable {
-       require(currentStep == Step.OGSale, "The OG sale is not open.");
+    function OGMint(bytes32[] calldata _proof) external payable callerIsUser {
+        require(currentStep == Step.OGSale || msg.sender == owner(), "The OG sale is not open.");
         require(isOG(msg.sender, _proof), "Not OG.");
         require(mintByWalletOG[msg.sender] + 1 <= 1, "You can only mint 1 NFT with OG role");
         require(totalSupply() + 1 <= sale_supply, "Max supply exceeded");
@@ -73,7 +81,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @param _proof Merkle Proof for WL
     * @param _amount The amount of tokens to mint. (max 2)
     */
-    function WLMint(bytes32[] calldata _proof, uint256 _amount) public payable {
+    function WLMint(bytes32[] calldata _proof, uint256 _amount) external payable callerIsUser {
         require(currentStep == Step.WhitelistSale, "The WL sale is not open.");
         require(isWhitelisted(msg.sender, _proof), "Not WL.");
         require(mintByWalletWL[msg.sender] + _amount <= 2, "You can only mint 2 NFTs with WL role");
@@ -87,7 +95,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @notice public mint function
     * @param _amount The amount of tokens to mint. (no limit)
     */
-    function PublicMint(uint256 _amount) public payable {
+    function PublicMint(uint256 _amount) external payable callerIsUser {
         require(currentStep == Step.PublicSale, "The public sale is not open.");
         require(totalSupply() + _amount <= sale_supply, "Max supply exceeded");
         require(msg.value >= publicPrice * _amount, "Not enough ETH");
@@ -98,7 +106,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @notice FreeMint mint function
     * @param _proof Merkle Proof for FreeMint
     */
-    function FreeMint(bytes32[] calldata _proof) public payable {
+    function FreeMint(bytes32[] calldata _proof) external callerIsUser {
         require(currentStep == Step.FreeMint, "The FreeMint sale is not open.");
         require(isFreeMint(msg.sender, _proof), "You don't have Free mint.");
         require(totalSupply() + 1 <= total_supply, "Max supply exceeded");
@@ -109,11 +117,11 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
 
 
     /*
-    * @notice Owner mint function
+    * @notice Owner mint function (WILL BE NEVER USED IF USERS CLAIM THEIR FREE MINTS
     * @param _count The number of NFTs to mint
     * @param _to The address to mint the NFTs to
     */
-    function mintForOwner(uint _count, address _to) external payable onlyOwner {
+    function mintForOwner(uint _count, address _to) external onlyOwner {
         require(totalSupply() + _count  <= total_supply, "Max supply exceeded.");
         _safeMint(_to, _count);
     }
@@ -165,7 +173,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     function tokenURI(uint256 _tokenId) override public view returns (string memory) {
         require(_exists(_tokenId),"ERC721Metadata: URI query for nonexistent token");
 
-        return string(abi.encodePacked(baseURI, _tokenId.toString()));
+        return string(abi.encodePacked(baseURI, _tokenId.toString(), ".json"));
     }
 
     /*

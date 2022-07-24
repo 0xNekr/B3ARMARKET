@@ -6,7 +6,7 @@ const free_mint = require('../assets/fm.json');
 const keccak256 = require('keccak256');
 
 async function main() {
-    const baseURI = "baseURI";
+    const baseURI = "ipfs://QmW2QBom5AdRqPdo4BWx2vft84y27s7MnocArfhtfgskN8/";
     const coreTeam = ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9"];
     const shares = [100];
 
@@ -38,9 +38,6 @@ async function main() {
     const wlRoot = wlTree.getHexRoot();
     const fmRoot = fmTree.getHexRoot();
 
-    const name = "B3AR MARKET";
-    const symbol = "B3AR";
-
     const contract = await ethers.getContractFactory("B3ARMARKETisERC721A");
     const Contract = await contract.deploy(
         baseURI,
@@ -48,9 +45,7 @@ async function main() {
         wlRoot,
         fmRoot,
         coreTeam,
-        shares,
-        name,
-        symbol
+        shares
     );
     console.log("Deploying contract...");
     await Contract.deployed();
@@ -62,8 +57,6 @@ async function main() {
     console.log("Argument 4 :", fmRoot);
     console.log("Argument 5 :", coreTeam);
     console.log("Argument 6 :", shares);
-    console.log("Argument 7 :", name);
-    console.log("Argument 8 :", symbol);
 
     console.log("Contract deployed to:", Contract.address);
 
