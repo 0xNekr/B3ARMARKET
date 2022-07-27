@@ -6,7 +6,7 @@ const free_mint = require('../assets/fm.json');
 const keccak256 = require('keccak256');
 
 async function main() {
-    const baseURI = "ipfs://bafybeifzxcpabmlzhmkj5qrqsm3notyh77rvo55jnvu33zczif6sumia3a/";
+    const baseURI = "ipfs://bafybeib7b5byrk3u3d2d3so2zmynxax5ddznrq75mgkryaxwjxkh2raxbm/";
     const coreTeam = ["0xF096D4e0C02E4115aec303C656BA4b33880aB0e9", "0xE111c1827dE8BfFB313d9C4a0103F8b979905137", "0xBA93f4686CBA0aA9652080EcC17d581425Ed7F13", "0xdc863f2E217B05575ea812178BDC5ed96b4555Ae"];
     const shares = [15, 45, 25, 15];
 
@@ -15,7 +15,7 @@ async function main() {
     let fmTab = [];
 
     og.map(a => {
-       ogTab.push(a.address);
+        ogTab.push(a.address);
     });
 
     whitelist.map(a => {

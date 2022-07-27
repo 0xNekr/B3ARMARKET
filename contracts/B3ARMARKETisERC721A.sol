@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
 
-contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
+contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter  {
     using Strings for uint;
 
     enum Step {
@@ -26,17 +26,20 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     bytes32 public wlMerkleRoot;    // Whitelist merkle root
     bytes32 public fmMerkleRoot;    // FreeMint merkle root
 
-    uint public wlPrice = 0.0066 ether;
-    uint public publicPrice = 0.013 ether;
+    uint public wlPrice = 0.0069 ether; // PRICE SNAPSHOT 27/07/2022 12:00 CET = 10$
+    uint public publicPrice = 0.0137 ether; // PRICE SNAPSHOT 27/07/2022 12:00 CET = 20$
 
-    mapping(address => uint) private mintByWalletOG;
-    mapping(address => uint) private mintByWalletWL;
-    mapping(address => uint) private mintByWalletFM;
+    mapping(address => uint) public mintByWalletOG;
+    mapping(address => uint) public mintByWalletWL;
+    mapping(address => uint) public mintByWalletFM;
 
     uint public constant sale_supply = 192;
     uint public constant total_supply = 222;
 
     string public baseURI;
+
+    event stepUpdated(Step currentStep);
+    event newMint(address indexed owner, uint256 startId, uint256 number);
 
     /*
     * @notice Initializes the contract with the given parameters.
@@ -74,6 +77,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
         require(msg.value >= wlPrice, "Not enough ETH");
         mintByWalletOG[msg.sender] += 1;
         _safeMint(msg.sender, 1);
+        emit newMint(msg.sender, totalSupply() - 1, 1);
     }
 
     /*
@@ -89,6 +93,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
         require(msg.value >= wlPrice * _amount, "Not enough ETH");
         mintByWalletWL[msg.sender] += _amount;
         _safeMint(msg.sender, _amount);
+        emit newMint(msg.sender, totalSupply() - _amount, _amount);
     }
 
     /*
@@ -100,6 +105,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
         require(totalSupply() + _amount <= sale_supply, "Max supply exceeded");
         require(msg.value >= publicPrice * _amount, "Not enough ETH");
         _safeMint(msg.sender, _amount);
+        emit newMint(msg.sender, totalSupply() - _amount, _amount);
     }
 
     /*
@@ -113,6 +119,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
         require(mintByWalletFM[msg.sender] + 1 <= 1, "You can only mint 1 NFT with FreeMint role");
         mintByWalletFM[msg.sender] += 1;
         _safeMint(msg.sender, 1);
+        emit newMint(msg.sender, totalSupply() - 1, 1);
     }
 
 
@@ -124,6 +131,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     function mintForOwner(uint _count, address _to) external onlyOwner {
         require(totalSupply() + _count  <= total_supply, "Max supply exceeded.");
         _safeMint(_to, _count);
+        emit newMint(_to, totalSupply() - _count, _count);
     }
 
     /*
@@ -132,6 +140,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     */
     function updateStep(Step _step) external onlyOwner {
         currentStep = _step;
+        emit stepUpdated(currentStep);
     }
 
     /*
@@ -180,7 +189,7 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter {
     * @notice return current price
     */
     function getPrice() public view returns (uint) {
-        if (currentStep == Step.WhitelistSale) {
+        if (currentStep == Step.WhitelistSale || currentStep == Step.OGSale) {
             return wlPrice;
         } else {
             return publicPrice;
