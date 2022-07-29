@@ -38,6 +38,13 @@ async function main() {
     const wlRoot = wlTree.getHexRoot();
     const fmRoot = fmTree.getHexRoot();
 
+    console.log("Argument 1 :", baseURI);
+    console.log("Argument 2 :", ogRoot);
+    console.log("Argument 3 :", wlRoot);
+    console.log("Argument 4 :", fmRoot);
+    console.log("Argument 5 :", coreTeam);
+    console.log("Argument 6 :", shares);
+
     const contract = await ethers.getContractFactory("B3ARMARKETisERC721A");
     const Contract = await contract.deploy(
         baseURI,
@@ -51,16 +58,9 @@ async function main() {
     await Contract.deployed();
 
 
-    console.log("Argument 1 :", baseURI);
-    console.log("Argument 2 :", ogRoot);
-    console.log("Argument 3 :", wlRoot);
-    console.log("Argument 4 :", fmRoot);
-    console.log("Argument 5 :", coreTeam);
-    console.log("Argument 6 :", shares);
-
     console.log("Contract deployed to:", Contract.address);
 
-    console.log("hardhat verify --network rinkeby --constructor-args .\\scripts\\arguments.js", Contract.address); // verify the contract
+    console.log("hardhat verify --network mainnet --constructor-args .\\scripts\\arguments.js", Contract.address); // verify the contract
 
 }
 

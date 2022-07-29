@@ -26,8 +26,8 @@ contract B3ARMARKETisERC721A is ERC721A, Ownable, PaymentSplitter  {
     bytes32 public wlMerkleRoot;    // Whitelist merkle root
     bytes32 public fmMerkleRoot;    // FreeMint merkle root
 
-    uint public wlPrice = 0.0069 ether; // PRICE SNAPSHOT 27/07/2022 12:00 CET = 10$
-    uint public publicPrice = 0.0137 ether; // PRICE SNAPSHOT 27/07/2022 12:00 CET = 20$
+    uint public wlPrice = 0.00625 ether;
+    uint public publicPrice = 0.0125 ether;
 
     mapping(address => uint) public mintByWalletOG;
     mapping(address => uint) public mintByWalletWL;

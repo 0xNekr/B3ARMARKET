@@ -26,6 +26,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 const config: HardhatUserConfig = {
   solidity: "0.8.13",
   networks: {
+    mainnet: {
+      url: process.env.API_URL_MAINNET!,
+      accounts: [process.env.PRIVATE_KEY_0xF0!],
+      gasPrice: "auto",
+    },
     rinkeby: {
       url: process.env.INFURA_RINKEBY_URL!,
       accounts: [process.env.PRIVATE_KEY_0xF0!],
@@ -35,7 +40,8 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      rinkeby: process.env.ETHSCAN_API_KEY!
+      rinkeby: process.env.ETHSCAN_API_KEY!,
+      mainnet: process.env.ETHSCAN_API_KEY!,
     },
   },paths: {
     artifacts: "./artifacts"
